@@ -1,0 +1,102 @@
+[
+ {
+  "t": "zxtitle",
+  "b": "This note's title is exactly the search term."
+ },
+ {
+  "t": "Quorvatix launch plan",
+  "b": "Ship the quorvatix beta to testers.\nBudget review with Maribel."
+ },
+ {
+  "t": "Maribel's follow-up",
+  "b": "Call about the quorvatix-beta contract.\nThe e-mail was sent on Friday."
+ },
+ {
+  "t": "Zephyrine café",
+  "b": "Crème brûlée and pão de queijo at the zephyrine café."
+ },
+ {
+  "t": "Straße notes zx",
+  "b": "Große Straße 12, Zürich. Naïve façade, résumé attached."
+ },
+ {
+  "t": "camelCase zxVarName",
+  "b": "Function zxParseThing handles zxparsething inputs."
+ },
+ {
+  "t": "Node.js snippets zx",
+  "b": "zxnode.js and zx_snake_case_value and zx-kebab-case."
+ },
+ {
+  "t": "Contact zxuser",
+  "b": "Write to zxuser@example.com or open https://zxsite.example.org/path?q=zxquery"
+ },
+ {
+  "t": "Invoice ZX-4471",
+  "b": "Total 1.299,50 EUR, period zx2026q3, ref 0042."
+ },
+ {
+  "t": "Party zxparty 🎉",
+  "b": "Balloons 🎉 for the zxparty on Saturday."
+ },
+ {
+  "t": "東京 zxメモ",
+  "b": "東京で会議があります zxtokyo"
+ },
+ {
+  "t": "Exact zxtitle mention",
+  "b": "Mentions zxtitle twice: zxtitle."
+ },
+ {
+  "t": "Short words zx",
+  "b": "an at it on zxab zxa"
+ },
+ {
+  "t": "First zxecho",
+  "b": "zxecho one"
+ },
+ {
+  "t": "Second zxecho",
+  "b": "zxecho two"
+ },
+ {
+  "t": "Ünïcödé zxdiacritics",
+  "b": "naïve coöperate"
+ },
+ {
+  "t": "Mixed Case ZXUPPER",
+  "b": "ZXUPPER zxupper ZxUpper"
+ },
+ {
+  "t": "Multi line zxmulti",
+  "b": "line one\nzxfirstword here\nzxsecondword there"
+ },
+ {
+  "t": "Apostrophes zx",
+  "b": "don't can't zxo'brien rock'n'roll"
+ },
+ {
+  "t": "Ligature zxlig",
+  "b": "ﬁnancial oﬃce ﬂow"
+ },
+ {
+  "t": "Numbers zxnum",
+  "b": "version 3.14.159 and 42nd street and ABC123def"
+ },
+ {
+  "t": "Hashtag zxtag",
+  "b": "Plan for #zxproject and @zxperson"
+ },
+ {
+  "t": "Attachment zxattach",
+  "b": "See the attached file."
+ },
+ {
+  "t": "Late zxecho",
+  "b": "zxecho three"
+ },
+ {
+  "t": "Apostrophe lab",
+  "b": "l'amour d'accord qu'il zxa'bcde zxab'cd o'neil mcdonald's isn't y'all they'll zxkoi'brien rock'n'roll zxq'z"
+ }
+]

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "notes-search"
+version = "1.0.0"
+description = "Search notes and text files exactly the way Apple Notes does"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Francisco Livraghi" }]
+requires-python = ">=3.10"
+dependencies = []
+keywords = ["apple-notes", "search", "spotlight", "macos", "reverse-engineering"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Text Processing :: Indexing",
+]
+
+[project.urls]
+Homepage = "https://github.com/FL-spec/notes-search"
+Documentation = "https://github.com/FL-spec/notes-search/blob/main/docs/how-it-works.md"
+Issues = "https://github.com/FL-spec/notes-search/issues"
+
+[project.scripts]
+notes-search = "notes_search.cli:main"
+
+[tool.setuptools]
+packages = ["notes_search"]
