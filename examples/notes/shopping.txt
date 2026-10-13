@@ -1,5 +1,2 @@
 Shopping list
-- [ ] eggs
-- [x] milk
-- [ ] bread
-- [ ] vanilla
+Eggs, milk, bread and vanilla

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: How Notes search works
+    url: https://github.com/FL-spec/notes-search/blob/main/docs/how-it-works.md
+    about: Check the documented rules before reporting a difference.

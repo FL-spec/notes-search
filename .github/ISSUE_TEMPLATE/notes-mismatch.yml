@@ -1,0 +1,51 @@
+name: Results differ from Apple Notes
+description: notes-search returned different notes, or a different order, than Notes.app did.
+labels: ["accuracy"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for checking notes-search against the real app. A reproducible case is the most
+        useful report this project can get.
+
+        **Please don't paste real notes.** Write one or two short notes that show the difference,
+        and check that they still show it in Notes.app.
+  - type: textarea
+    id: notes
+    attributes:
+      label: The notes
+      description: The title and text of each note involved, as you typed them into Notes.
+      placeholder: |
+        Note 1: "Trip plan" / "Train to Porto on Friday"
+        Note 2: "Porto" / "Restaurants to try"
+    validations:
+      required: true
+  - type: input
+    id: search
+    attributes:
+      label: The search
+      description: Exactly what you typed into the Notes search field.
+    validations:
+      required: true
+  - type: textarea
+    id: notes-app
+    attributes:
+      label: What Notes.app showed
+      description: The results in order, and which were under Top Hits.
+    validations:
+      required: true
+  - type: textarea
+    id: notes-search
+    attributes:
+      label: What notes-search showed
+      description: The output of `notes-search search "…" --verbose` on the same notes.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "26.1"
+    validations:
+      required: true

@@ -30,6 +30,7 @@ To check matching and the fuzzy matcher against Spotlight on your Mac:
 ```bash
 python3 scripts/matching_lab.py fuzzylab/corpus
 python3 scripts/fuzzy_lab.py fuzzylab/typos
+python3 scripts/render_demo.py     # after changing output formatting
 ```
 
 The folder must not be hidden or inside a hidden folder, because Spotlight doesn't index those.
@@ -37,6 +38,14 @@ If you change tokenization, add the queries you used to `scripts/lab/queries.jso
 matching lab before and after.
 
 ## Style
+
+The project uses `ruff` for linting and formatting and `mypy` for type checking. CI runs all
+three, so it helps to run them before pushing:
+
+```bash
+pip install -e ".[dev]"
+ruff check . && ruff format --check . && mypy notes_search
+```
 
 - Standard library only. The project is meant to be read, and a dependency has to be worth it.
 - When code mirrors something in Apple's frameworks, name the Apple symbol in a comment, as the

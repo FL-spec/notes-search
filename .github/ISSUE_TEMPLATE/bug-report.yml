@@ -1,0 +1,31 @@
+name: Bug report
+description: Something crashes, errors or behaves wrongly, other than search results.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: The full error or output. Remove anything private first.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: notes-search version
+      description: The output of `notes-search --version`.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system and Python version
+      placeholder: "macOS 26.1, Python 3.13"
+    validations:
+      required: true

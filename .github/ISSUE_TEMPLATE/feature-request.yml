@@ -1,0 +1,18 @@
+name: Feature request
+description: Suggest something new.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: Describe the problem first, then the solution you have in mind, if any.
+    validations:
+      required: true
+  - type: textarea
+    id: notes-behaviour
+    attributes:
+      label: Does Apple Notes do this?
+      description: |
+        notes-search aims to match Notes exactly. If Notes behaves this way, say how you checked.
+        Features Notes doesn't have are welcome too, as long as they are opt-in.
