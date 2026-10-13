@@ -324,6 +324,24 @@ class CLITests(unittest.TestCase):
 
 
 class SourceTests(unittest.TestCase):
+    def test_apple_notes_export_skips_recently_deleted(self):
+        import json
+        import subprocess
+        from unittest import mock
+
+        from notes_search import sources
+
+        exported = [
+            {"id": "1", "title": "Kept", "folder": "Notes", "html": "<div>Kept</div><div>body</div>"},
+            {"id": "2", "title": "Gone", "folder": "Recently Deleted", "html": "<div>Gone</div>"},
+            {"id": "3", "title": "Weg", "folder": "Zuletzt gelöscht", "html": "<div>Weg</div>"},
+        ]
+        done = subprocess.CompletedProcess([], 0, stdout=json.dumps(exported), stderr="")
+        with mock.patch.object(sources.subprocess, "run", return_value=done):
+            self.assertEqual([d.title for d in sources.from_apple_notes()], ["Kept"])
+            all_titles = [d.title for d in sources.from_apple_notes(include_deleted=True)]
+        self.assertEqual(all_titles, ["Kept", "Gone", "Weg"])
+
     def test_html_to_text(self):
         self.assertEqual(html_to_text("<div>Title</div><div>a<br>b</div>"), "Title\na\nb")
 

@@ -63,7 +63,8 @@ notes-search search "lisbon tram"
 ```
 
 The first time you index `apple-notes`, macOS asks for permission to let your terminal control
-Notes. Locked notes are indexed by title only, which is what Notes itself does.
+Notes. Locked notes are indexed by title only, which is what Notes itself does. Notes in Recently
+Deleted are skipped; add `--include-deleted` to index them too.
 
 ## How Notes search works
 

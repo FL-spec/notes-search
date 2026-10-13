@@ -56,7 +56,7 @@ def _load_index(path: Path) -> list[Document]:
 
 
 def cmd_index(args) -> None:
-    docs = load(args.sources)
+    docs = load(args.sources, include_deleted=args.include_deleted)
     _save(docs, args.index)
     print(f"Indexed {len(docs)} documents into {args.index}")
 
@@ -175,6 +175,9 @@ def main(argv=None) -> None:
 
     i = sub.add_parser("index", help="build an index from folders, JSON files or 'apple-notes'")
     i.add_argument("sources", nargs="+")
+    i.add_argument(
+        "--include-deleted", action="store_true", help="also index notes in Recently Deleted (apple-notes)"
+    )
     i.set_defaults(func=cmd_index)
 
     def search_opts(sp):

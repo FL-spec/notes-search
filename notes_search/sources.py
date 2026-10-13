@@ -14,6 +14,48 @@ from pathlib import Path
 
 TEXT_SUFFIXES = {".md", ".markdown", ".txt", ".text", ".org", ".rst"}
 
+# The "Recently Deleted" folder in every language Notes ships, from NotesShared.framework
+# Resources/Localizable.loctable (macOS 26). Folder ids do not mark the trash, so names are used.
+TRASH_FOLDER_NAMES = frozenset(
+    {
+        "Apagadas",
+        "Baru Dihapus",
+        "Eliminadas",
+        "Eliminades fa poc",
+        "Eliminate",
+        "Nedavno izbrisano",
+        "Nedavno obrisano",
+        "Nedávno smazané",
+        "Nedávno vymazané",
+        "Nemrég törölt",
+        "Nylig slettet",
+        "Ostatnio usunięte",
+        "Recent verwijderd",
+        "Recently Deleted",
+        "Recién eliminado",
+        "Senast raderade",
+        "Slettet for nylig",
+        "Son Silinenler",
+        "Suppr. récentes",
+        "Terbaru Dipadam",
+        "Zuletzt gelöscht",
+        "Äskettäin poistetut",
+        "Đã xóa gần đây",
+        "Șterse recent",
+        "Πρόσφατες διαγραφές",
+        "Недавно видалені",
+        "Недавно удаленные",
+        "נמחקו לאחרונה",
+        "المحذوفة مؤخرًا",
+        "हालिया डिलीट किए गए",
+        "ที่ลบล่าสุด",
+        "最近删除",
+        "最近刪除",
+        "最近削除した項目",
+        "최근 삭제된 항목",
+    }
+)
+
 
 @dataclass
 class Document:
@@ -168,11 +210,12 @@ function run() {
 """
 
 
-def from_apple_notes(timeout: int = 1800) -> Iterator[Document]:
+def from_apple_notes(timeout: int = 1800, include_deleted: bool = False) -> Iterator[Document]:
     """Export notes through JavaScript for Automation (bulk property reads).
 
     macOS asks once for permission for your terminal to control Notes. Locked notes are
-    returned without their contents, as Notes does for Spotlight.
+    returned without their contents, as Notes does for Spotlight. Notes in Recently Deleted are
+    skipped unless ``include_deleted`` is set.
     """
     proc = subprocess.run(
         ["osascript", "-l", "JavaScript", "-e", _JXA_EXPORT], capture_output=True, text=True, timeout=timeout
@@ -180,6 +223,8 @@ def from_apple_notes(timeout: int = 1800) -> Iterator[Document]:
     if proc.returncode != 0:
         raise RuntimeError(f"Apple Notes export failed: {proc.stderr.strip()}")
     for item in json.loads(proc.stdout):
+        if not include_deleted and item.get("folder") in TRASH_FOLDER_NAMES:
+            continue
         body_html = item.pop("html", "")
         body = html_to_text(body_html)
         name = item["title"]
@@ -209,11 +254,11 @@ def _iso(value: str | None) -> datetime | None:
     return datetime.fromisoformat(value.replace("Z", "+00:00")) if value else None
 
 
-def load(sources: Iterable[str]) -> list[Document]:
+def load(sources: Iterable[str], include_deleted: bool = False) -> list[Document]:
     docs: list[Document] = []
     for src in sources:
         if src == "apple-notes":
-            docs.extend(from_apple_notes())
+            docs.extend(from_apple_notes(include_deleted=include_deleted))
         elif src.endswith(".json"):
             docs.extend(from_json(src))
         else:

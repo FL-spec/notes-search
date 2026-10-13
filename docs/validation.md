@@ -133,6 +133,9 @@ python3 scripts/fuzzy_lab.py fuzzylab/typos
 The synthetic corpus was created as real notes in a test folder, but it wasn't searched side by
 side in the app. Section 2 tests the same engine through `mdfind` instead.
 
+Whether Notes' own search includes notes in Recently Deleted wasn't checked. notes-search skips
+them by default; `--include-deleted` indexes them.
+
 Attachments weren't tested, because the real library had none. Attachment search and parent notes
 follow Notes' code.
 

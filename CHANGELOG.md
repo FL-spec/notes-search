@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 1.0.2
+
+### Fixed
+
+- The Apple Notes import no longer indexes notes in Recently Deleted. The folder is recognised by
+  its name in any of the 42 languages Notes ships. Use `notes-search index apple-notes
+  --include-deleted` to keep them.
+
+### Changed
+
+- CI tests Python 3.10 through 3.14.
+- Documentation corrections: every command and claim was rechecked against the code and
+  measurements.
+
 ## 1.0.1
 
 ### Fixed
