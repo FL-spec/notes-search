@@ -6,11 +6,11 @@ import json
 import os
 import re
 import subprocess
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Iterable, Iterator
 
 TEXT_SUFFIXES = {".md", ".markdown", ".txt", ".text", ".org", ".rst"}
 
@@ -39,7 +39,7 @@ class Document:
         return d
 
     @classmethod
-    def from_json(cls, d: dict) -> "Document":
+    def from_json(cls, d: dict) -> Document:
         d = dict(d)
         for k in ("modified", "created"):
             if d.get(k):
@@ -174,8 +174,9 @@ def from_apple_notes(timeout: int = 1800) -> Iterator[Document]:
     macOS asks once for permission for your terminal to control Notes. Locked notes are
     returned without their contents, as Notes does for Spotlight.
     """
-    proc = subprocess.run(["osascript", "-l", "JavaScript", "-e", _JXA_EXPORT],
-                          capture_output=True, text=True, timeout=timeout)
+    proc = subprocess.run(
+        ["osascript", "-l", "JavaScript", "-e", _JXA_EXPORT], capture_output=True, text=True, timeout=timeout
+    )
     if proc.returncode != 0:
         raise RuntimeError(f"Apple Notes export failed: {proc.stderr.strip()}")
     for item in json.loads(proc.stdout):
@@ -183,7 +184,7 @@ def from_apple_notes(timeout: int = 1800) -> Iterator[Document]:
         body = html_to_text(body_html)
         name = item["title"]
         if body.startswith(name):
-            body = body[len(name):].lstrip()
+            body = body[len(name) :].lstrip()
         attachments = [a for a in item.get("attachments") or [] if a]
         flags = text_flags(body, attachments)
         if item.get("locked"):
@@ -193,9 +194,14 @@ def from_apple_notes(timeout: int = 1800) -> Iterator[Document]:
         if 'type="checkbox"' in body_html or "checklist" in body_html:
             flags.append("checklists")
         yield Document(
-            id=item["id"], title=name, body=body, folder=item.get("folder") or "",
-            modified=_iso(item.get("modified")), created=_iso(item.get("created")),
-            attachments=attachments, flags=sorted(set(flags)),
+            id=item["id"],
+            title=name,
+            body=body,
+            folder=item.get("folder") or "",
+            modified=_iso(item.get("modified")),
+            created=_iso(item.get("created")),
+            attachments=attachments,
+            flags=sorted(set(flags)),
         )
 
 

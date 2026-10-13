@@ -50,8 +50,7 @@ def _save(docs: list[Document], path: Path) -> None:
 
 def _load_index(path: Path) -> list[Document]:
     if not path.exists():
-        sys.exit(f"No index at {path}. Run `notes-search index SOURCE...` first, "
-                 "or pass --source.")
+        sys.exit(f"No index at {path}. Run `notes-search index SOURCE...` first, or pass --source.")
     data = json.loads(path.read_text(encoding="utf-8"))
     return [Document.from_json(d) for d in data["documents"]]
 
@@ -71,7 +70,8 @@ def _print_results(engine: SearchEngine, results, args) -> None:
         return
     shown = results[: args.limit]
     s = engine.sections(shown)
-    tokens = search_terms(args.query) if getattr(args, "query", None) else []
+    query = getattr(args, "query", None)
+    tokens = [t for t in search_terms(query) if t] if query else []
     bold, dim, reset = _style("1"), _style("2"), _style("0")
     hl = {"start": _style("22;1"), "end": _style("22;2")} if _color() else {"start": "", "end": ""}
     for name, group in (("Top Hits", s.top_hits), ("Notes", s.notes), ("Attachments", s.attachments)):
@@ -82,9 +82,15 @@ def _print_results(engine: SearchEngine, results, args) -> None:
             when = r.item.doc.modified.astimezone().strftime("%Y-%m-%d") if r.item.doc.modified else ""
             where = f" · {r.item.doc.folder}" if r.item.doc.folder else ""
             parent = f" · in “{r.item.doc.title}”" if r.item.result_type.name == "ATTACHMENT" else ""
-            extra = (f"  [{r.source} score={r.ranking_score:g} bits={r.relevance_bit_field}"
-                     f"{' exact-title' if r.is_exact_title_match else ''}"
-                     f"{' prefix' if r.has_prefix_match else ''}]") if args.verbose else ""
+            extra = (
+                (
+                    f"  [{r.source} score={r.ranking_score:g} bits={r.relevance_bit_field}"
+                    f"{' exact-title' if r.is_exact_title_match else ''}"
+                    f"{' prefix' if r.has_prefix_match else ''}]"
+                )
+                if args.verbose
+                else ""
+            )
             title = highlight(r.item.title, tokens, start=bold, end=reset) if _color() else r.item.title
             print(f"  {title}  {dim}{when}{where}{parent}{extra}{reset}")
             if r.snippet and r.snippet != r.item.title:
@@ -114,8 +120,10 @@ def cmd_search(args) -> None:
         plan = engine.plan(args.query, scope)
         bold, reset = _style("1"), _style("0")
         if args.spell:
-            print(f"{bold}tokens{reset} (word + spell-server variants): "
-                  + "; ".join(" | ".join(g) for g in plan.tokens))
+            print(
+                f"{bold}tokens{reset} (word + spell-server variants): "
+                + "; ".join(" | ".join(g) for g in plan.tokens)
+            )
         for name, q in plan.queries:
             print(f"{bold}{name} query{reset}\n  {q}")
     _print_results(engine, engine.search(args.query, scope), args)
@@ -159,8 +167,8 @@ def cmd_spotlight(args) -> None:
 
 def main(argv=None) -> None:
     p = argparse.ArgumentParser(
-        prog="notes-search",
-        description="Search notes and text files exactly the way Apple Notes does.")
+        prog="notes-search", description="Search notes and text files exactly the way Apple Notes does."
+    )
     p.add_argument("--version", action="version", version=__version__)
     p.add_argument("--index", type=Path, default=DEFAULT_INDEX, help="index file (default: %(default)s)")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -170,21 +178,43 @@ def main(argv=None) -> None:
     i.set_defaults(func=cmd_index)
 
     def search_opts(sp):
-        sp.add_argument("--source", action="append",
-                        help="search these sources directly instead of the index")
-        sp.add_argument("--strategy", type=int, choices=[0, 1, 2], default=0,
-                        help="ranking: 0 recency (Notes default), 1 score, 2 date buckets")
-        sp.add_argument("--has", action="append", choices=sorted(TOKEN_ATTRIBUTES),
-                        help="scope token filter, like Notes' search tokens (repeatable)")
-        sp.add_argument("--fuzzy", action="store_true",
-                        help="also run fuzzy and substring passes (Apple-internal setting)")
-        sp.add_argument("--spell", action="store_true",
-                        help="also OR misspelled words with spell-server guesses (Notes' code path; "
-                             "measured to add nothing in Notes.app)")
-        sp.add_argument("--spell-api", action="store_true",
-                        help="also run the spelling/lemma query (Apple-internal setting)")
-        sp.add_argument("--related", action="store_true",
-                        help="also query related words from word embeddings (Apple-internal setting)")
+        sp.add_argument(
+            "--source", action="append", help="search these sources directly instead of the index"
+        )
+        sp.add_argument(
+            "--strategy",
+            type=int,
+            choices=[0, 1, 2],
+            default=0,
+            help="ranking: 0 recency (Notes default), 1 score, 2 date buckets",
+        )
+        sp.add_argument(
+            "--has",
+            action="append",
+            choices=sorted(TOKEN_ATTRIBUTES),
+            help="scope token filter, like Notes' search tokens (repeatable)",
+        )
+        sp.add_argument(
+            "--fuzzy",
+            action="store_true",
+            help="also run fuzzy and substring passes (Apple-internal setting)",
+        )
+        sp.add_argument(
+            "--spell",
+            action="store_true",
+            help="also OR misspelled words with spell-server guesses (Notes' code path; "
+            "measured to add nothing in Notes.app)",
+        )
+        sp.add_argument(
+            "--spell-api",
+            action="store_true",
+            help="also run the spelling/lemma query (Apple-internal setting)",
+        )
+        sp.add_argument(
+            "--related",
+            action="store_true",
+            help="also query related words from word embeddings (Apple-internal setting)",
+        )
         sp.add_argument("--language", help="spell/embedding language, e.g. en (default: system)")
         sp.add_argument("--no-nl", action="store_true", help="disable date/folder/tag parsing")
         sp.add_argument("--limit", type=int, default=20)
@@ -203,8 +233,12 @@ def main(argv=None) -> None:
 
     q = sub.add_parser("query", help="print the Spotlight query string Notes would build")
     q.add_argument("text")
-    q.add_argument("--match", choices=MATCH_CHOICES, default="notes",
-                   help="notes (default): the query Notes runs; or one per-word clause type")
+    q.add_argument(
+        "--match",
+        choices=MATCH_CHOICES,
+        default="notes",
+        help="notes (default): the query Notes runs; or one per-word clause type",
+    )
     q.set_defaults(func=cmd_query)
 
     sp = sub.add_parser("spotlight", help="run the Notes-style query against files via mdfind")

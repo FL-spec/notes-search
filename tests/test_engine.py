@@ -1,6 +1,7 @@
 import math
 import unittest
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from notes_search import macos, nl
 from notes_search.engine import SearchEngine
@@ -23,8 +24,7 @@ def engine(docs, **kw):
 
 
 def ids(results):
-    return [r.item.doc.id + ("/att" if r.item.result_type is ResultType.ATTACHMENT else "")
-            for r in results]
+    return [r.item.doc.id + ("/att" if r.item.result_type is ResultType.ATTACHMENT else "") for r in results]
 
 
 class TextTests(unittest.TestCase):
@@ -60,15 +60,18 @@ class SpotlightFuzzyTests(unittest.TestCase):
 
 class TokenizerTests(unittest.TestCase):
     def test_connectors(self):
-        self.assertEqual(query_tokens("e-mail (draft) don't"),
-                         [("e-mail", False), ("draft", True), ("don't", False)])
+        self.assertEqual(
+            query_tokens("e-mail (draft) don't"), [("e-mail", False), ("draft", True), ("don't", False)]
+        )
 
     def test_variant_cap(self):
         self.assertEqual([max_variants_per_token(n) for n in (1, 2, 3, 7)], [60, 30, 20, 8])
 
     def test_joint_query(self):
-        self.assertEqual(joint_query("(x)", ["checklists", "locked"]),
-                         "((_ICItemHasChecklists = 1) && (_ICItemIsLocked = 1)) && ((x))")
+        self.assertEqual(
+            joint_query("(x)", ["checklists", "locked"]),
+            "((_ICItemHasChecklists = 1) && (_ICItemIsLocked = 1)) && ((x))",
+        )
 
 
 class PipelineTests(unittest.TestCase):
@@ -118,14 +121,14 @@ class MeasuredNotesBehaviourTests(unittest.TestCase):
         return ids(engine(self.docs).search(text))
 
     def test_single_word_matches_inside_words(self):
-        self.assertEqual(self.q("ack"), ["b"])       # b-ack
-        self.assertEqual(self.q("acia"), ["c"])      # m-acia
+        self.assertEqual(self.q("ack"), ["b"])  # b-ack
+        self.assertEqual(self.q("acia"), ["c"])  # m-acia
         self.assertEqual(self.q("orvat"), ["a"])
-        self.assertEqual(self.q("b"), ["b", "d"])    # b-utton, GITHU-B
+        self.assertEqual(self.q("b"), ["b", "d"])  # b-utton, GITHU-B
 
     def test_first_word_substring_later_words_prefix(self):
         self.assertEqual(self.q("orvatix release"), ["a"])
-        self.assertEqual(self.q("orvatix names"), ["a"])   # title and body: one text field
+        self.assertEqual(self.q("orvatix names"), ["a"])  # title and body: one text field
         self.assertEqual(self.q("ames roadmap"), ["a"])
         self.assertEqual(self.q("quo names"), ["a"])
         self.assertEqual(self.q("orvatix 2 release"), ["a"])  # middle word: prefix of "20"
@@ -139,8 +142,11 @@ class MeasuredNotesBehaviourTests(unittest.TestCase):
         self.assertEqual(self.q("repo"), ["d"])
 
     def test_order_is_exact_title_then_date_not_prefix(self):
-        docs = [doc("old", "k7", "x", days_old=76), doc("new", "Keys", "token_51K7x", days_old=40),
-                doc("sub", "Other", "zzk7zz", days_old=1)]
+        docs = [
+            doc("old", "k7", "x", days_old=76),
+            doc("new", "Keys", "token_51K7x", days_old=40),
+            doc("sub", "Other", "zzk7zz", days_old=1),
+        ]
         self.assertEqual(ids(engine(docs).search("k7")), ["old", "sub", "new"])
 
     def test_typos_are_not_corrected(self):
@@ -168,11 +174,11 @@ class SpotlightTokenizationTests(unittest.TestCase):
         return sorted(ids(engine(self.docs, natural_language=False).search(text)))
 
     def test_compounds_are_indexed_whole_and_in_parts(self):
-        self.assertEqual(self.q("alpha-beta"), ["hy"])          # hyphen kept in the search word
+        self.assertEqual(self.q("alpha-beta"), ["hy"])  # hyphen kept in the search word
         self.assertEqual(self.q("alpha beta"), ["hy", "sp"])
-        self.assertEqual(self.q("call beta"), ["hy"])           # later word: part of a compound
+        self.assertEqual(self.q("call beta"), ["hy"])  # later word: part of a compound
         self.assertEqual(self.q("write com"), ["url"])
-        self.assertEqual(self.q("street def"), ["num"])         # letter/digit runs
+        self.assertEqual(self.q("street def"), ["num"])  # letter/digit runs
         self.assertEqual(self.q("total 50"), ["num"])
 
     def test_url_pieces(self):
@@ -180,12 +186,12 @@ class SpotlightTokenizationTests(unittest.TestCase):
         self.assertEqual(self.q("example.org"), ["url"])
 
     def test_first_word_trailing_punctuation(self):
-        self.assertEqual(self.q("testers."), [])                # nothing inside the word
+        self.assertEqual(self.q("testers."), [])  # nothing inside the word
         self.assertEqual(self.q("user@"), [])
         self.assertEqual(self.q("site."), [])
-        self.assertEqual(self.q("3.14."), ["num"])              # already contains punctuation
+        self.assertEqual(self.q("3.14."), ["num"])  # already contains punctuation
         self.assertEqual(self.q("user@example."), ["url"])
-        self.assertEqual(self.q("alpha-"), ["hy"])              # dangling connector is fine
+        self.assertEqual(self.q("alpha-"), ["hy"])  # dangling connector is fine
         self.assertEqual(self.q("maribel'"), ["apo"])
 
     def test_later_word_punctuation_ignored(self):
@@ -197,15 +203,15 @@ class SpotlightTokenizationTests(unittest.TestCase):
         self.assertEqual(self.q("@person"), ["tag"])
 
     def test_apostrophes(self):
-        self.assertEqual(self.q("o'brien"), [])                 # elision splits zxo'brien
+        self.assertEqual(self.q("o'brien"), [])  # elision splits zxo'brien
         self.assertEqual(self.q("brien"), ["apo"])
         self.assertEqual(self.q("rock'n"), ["apo"])
-        self.assertEqual(self.q("can t"), [])                   # contractions stay whole
+        self.assertEqual(self.q("can t"), [])  # contractions stay whole
 
     def test_folding(self):
         self.assertEqual(self.q("strasse"), ["acc"])
         self.assertEqual(self.q("creme brulee"), ["acc"])
-        self.assertEqual(self.q("financial"), [])               # ligatures are not folded
+        self.assertEqual(self.q("financial"), [])  # ligatures are not folded
         self.assertEqual(self.q("ﬁnancial"), ["lig"])
 
     def test_symbols(self):
@@ -213,16 +219,22 @@ class SpotlightTokenizationTests(unittest.TestCase):
 
     def test_compound_tails_and_camel_case(self):
         docs = [doc("t", "Snippets", "zx_snake_case_value zxnode.js zxParseThing ref zx2026q3")]
-        q = lambda text: ids(engine(docs, natural_language=False).search(text))
-        self.assertEqual(q("snippets case_value"), ["t"])   # tail after _
-        self.assertEqual(q("snippets .js"), ["t"])          # tail with its separator
-        self.assertEqual(q("snippets thing"), ["t"])        # camelCase part
-        self.assertEqual(q("ref q3"), ["t"])                # piece after a digit→letter change
-        self.assertEqual(q("snippets ode"), [])             # not a word start
+
+        def q(text):
+            return ids(engine(docs, natural_language=False).search(text))
+
+        self.assertEqual(q("snippets case_value"), ["t"])  # tail after _
+        self.assertEqual(q("snippets .js"), ["t"])  # tail with its separator
+        self.assertEqual(q("snippets thing"), ["t"])  # camelCase part
+        self.assertEqual(q("ref q3"), ["t"])  # piece after a digit→letter change
+        self.assertEqual(q("snippets ode"), [])  # not a word start
 
     def test_elision_and_leading_apostrophe(self):
         docs = [doc("f", "Lab", "l'amour d'accord qu'il y'all they'll")]
-        q = lambda text: ids(engine(docs, natural_language=False).search(text))
+
+        def q(text):
+            return ids(engine(docs, natural_language=False).search(text))
+
         self.assertEqual(q("lab amour"), ["f"])
         self.assertEqual(q("'amour"), ["f"])
         self.assertEqual(q("l'amour"), [])
@@ -252,8 +264,9 @@ class RankingTests(unittest.TestCase):
         self.assertEqual(bucket_of_time_interval(86400), 8)
         self.assertEqual(bucket_of_time_interval(7 * 86400), 10)
         self.assertEqual(bucket_of_time_interval(365 * 86400), 16)
-        self.assertEqual(bucket_of_time_interval(86400),
-                         math.trunc(math.log(86400) * 1.28617347 - 6.14189718))
+        self.assertEqual(
+            bucket_of_time_interval(86400), math.trunc(math.log(86400) * 1.28617347 - 6.14189718)
+        )
 
     def test_default_strategy_exact_title_then_recency_shadow(self):
         docs = [
@@ -293,6 +306,21 @@ class NaturalLanguageTests(unittest.TestCase):
     def test_nl_query_is_an_additional_pass(self):
         docs = [doc(1, "Budget", days_old=2), doc(2, "Budget 2020", days_old=400)]
         self.assertEqual(ids(engine(docs).search("budget this month")), ["1"])
+
+
+class CLITests(unittest.TestCase):
+    def test_unmatchable_first_word_with_other_passes(self):
+        # Regression: a first word that can't match is None; highlighting must skip it.
+        import contextlib
+        import io
+
+        from notes_search import cli
+
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            examples = Path(__file__).resolve().parents[1] / "examples" / "notes"
+            cli.main(["search", "milk. bread", "--fuzzy", "--source", str(examples)])
+        self.assertIn("Shopping list", out.getvalue())
 
 
 class SourceTests(unittest.TestCase):

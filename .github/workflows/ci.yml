@@ -1,12 +1,29 @@
-name: tests
+name: CI
 
 on:
   push:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
+  lint:
+    name: Lint and type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install ruff mypy
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy notes_search
+
   test:
+    name: Test (${{ matrix.os }}, Python ${{ matrix.python }})
     strategy:
       fail-fast: false
       matrix:

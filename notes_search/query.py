@@ -25,8 +25,8 @@ Reverse-engineered behaviour (NotesShared / NotesSupport, macOS 26):
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from enum import IntEnum
-from typing import Iterable, Sequence
 
 # +[ICSpotlightUtilities queryFields], in Apple's order.
 QUERY_FIELDS: tuple[str, ...] = (
@@ -40,7 +40,7 @@ QUERY_FIELDS: tuple[str, ...] = (
 DEFAULT_FLAGS = "cwd"
 
 # The fuzzy template appends "f" + "%3.3d" % 66 to the flags.
-FUZZY_SUFFIX = "f%03d" % 66
+FUZZY_SUFFIX = f"f{66:03d}"
 
 
 class MatchType(IntEnum):

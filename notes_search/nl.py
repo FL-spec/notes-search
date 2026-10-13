@@ -11,9 +11,26 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
-MONTHS = {m: i for i, m in enumerate(
-    ["january", "february", "march", "april", "may", "june", "july", "august",
-     "september", "october", "november", "december"], 1)}
+MONTHS = {
+    m: i
+    for i, m in enumerate(
+        [
+            "january",
+            "february",
+            "march",
+            "april",
+            "may",
+            "june",
+            "july",
+            "august",
+            "september",
+            "october",
+            "november",
+            "december",
+        ],
+        1,
+    )
+}
 
 
 @dataclass
@@ -38,8 +55,9 @@ class Filters:
         return ", ".join(parts)
 
     def active(self) -> bool:
-        return bool(self.modified_after or self.modified_before or self.folder
-                    or self.tags or self.has_attachments)
+        return bool(
+            self.modified_after or self.modified_before or self.folder or self.tags or self.has_attachments
+        )
 
 
 def _day(dt: datetime) -> datetime:
@@ -56,7 +74,7 @@ def parse(text: str, now: datetime | None = None) -> tuple[str, Filters]:
         m = re.search(pattern, text, re.IGNORECASE)
         if m:
             handler(m)
-            text = (text[: m.start()] + " " + text[m.end():]).strip()
+            text = (text[: m.start()] + " " + text[m.end() :]).strip()
 
     take(r'\bfolder:(?:"([^"]+)"|(\S+))', lambda m: setattr(f, "folder", m.group(1) or m.group(2)))
     for tag in re.findall(r"(?<!\w)#(\w+)", text):
@@ -92,7 +110,10 @@ def parse(text: str, now: datetime | None = None) -> tuple[str, Filters]:
 
     def month(m: re.Match) -> None:
         mo = MONTHS[m.group(1).lower()]
-        year = int(m.group(2)) if m.group(2) else (local_now.year if mo <= local_now.month else local_now.year - 1)
+        if m.group(2):
+            year = int(m.group(2))
+        else:
+            year = local_now.year if mo <= local_now.month else local_now.year - 1
         start = today.replace(year=year, month=mo, day=1)
         end = month_start(start.replace(day=28) + timedelta(days=4))
         rng(start, end)

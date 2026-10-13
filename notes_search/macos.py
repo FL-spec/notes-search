@@ -57,7 +57,9 @@ def _call(payload: str) -> dict:
     try:
         proc = subprocess.run(
             ["osascript", "-l", "JavaScript", "-e", _SCRIPT, payload],
-            capture_output=True, text=True, timeout=15,
+            capture_output=True,
+            text=True,
+            timeout=15,
         )
     except (OSError, subprocess.TimeoutExpired):
         return {}
@@ -82,10 +84,16 @@ def language_services(
     ``guesses[w]`` is None when the word is spelled correctly (Notes only expands
     misspelled words), otherwise the spell server's guesses in rank order.
     """
-    payload = json.dumps({
-        "spell": list(spell), "lemma": list(lemma), "related": list(related),
-        "language": language, "maxCount": max_count, "maxDistance": max_distance,
-    })
+    payload = json.dumps(
+        {
+            "spell": list(spell),
+            "lemma": list(lemma),
+            "related": list(related),
+            "language": language,
+            "maxCount": max_count,
+            "maxDistance": max_distance,
+        }
+    )
     data = _call(payload)
     return {
         "guesses": data.get("guesses", {}),

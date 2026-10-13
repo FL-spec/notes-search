@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "notes-search"
-version = "1.0.0"
+version = "1.0.1"
 description = "Search notes and text files exactly the way Apple Notes does"
 readme = "README.md"
 license = { text = "MIT" }
@@ -28,8 +28,29 @@ Homepage = "https://github.com/FL-spec/notes-search"
 Documentation = "https://github.com/FL-spec/notes-search/blob/main/docs/how-it-works.md"
 Issues = "https://github.com/FL-spec/notes-search/issues"
 
+[project.optional-dependencies]
+dev = ["ruff>=0.6", "mypy>=1.10"]
+
 [project.scripts]
 notes-search = "notes_search.cli:main"
 
 [tool.setuptools]
 packages = ["notes_search"]
+
+[tool.setuptools.package-data]
+notes_search = ["py.typed"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+# The tests and docs contain intentional ambiguous characters (ligatures, typographic quotes).
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_ignores = true
+warn_redundant_casts = true
+check_untyped_defs = true

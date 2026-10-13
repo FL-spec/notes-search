@@ -20,7 +20,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from notes_search.text import fuzzy_word_match  # noqa: E402
+from notes_search.text import fuzzy_word_match
 
 BASES = ["recipe", "chocolate", "cake", "lisbon"]
 THRESHOLDS = [80, 66, 50, 33]
@@ -35,13 +35,13 @@ def variants(base: str) -> dict[str, str]:
 
     n = len(base)
     for i in range(n):
-        add(base[:i] + "q" + base[i + 1:], f"sub@{i}")
-        add(base[:i] + base[i + 1:], f"del@{i}")
+        add(base[:i] + "q" + base[i + 1 :], f"sub@{i}")
+        add(base[:i] + base[i + 1 :], f"del@{i}")
         add(base[:i] + "q" + base[i:], f"ins@{i}")
         if i < n - 1:
-            add(base[:i] + base[i + 1] + base[i] + base[i + 2:], f"swap@{i}")
+            add(base[:i] + base[i + 1] + base[i] + base[i + 2 :], f"swap@{i}")
     for i, j in itertools.combinations(range(n), 2):
-        add(base[:i] + "q" + base[i + 1:j] + "z" + base[j + 1:], f"sub2@{i},{j}")
+        add(base[:i] + "q" + base[i + 1 : j] + "z" + base[j + 1 :], f"sub2@{i},{j}")
     for i, j, k in itertools.combinations(range(n), 3):
         v = list(base)
         v[i], v[j], v[k] = "q", "z", "k"
@@ -61,7 +61,7 @@ def main() -> None:
     folder.mkdir(parents=True, exist_ok=True)
     table: dict[str, tuple[str, str]] = {}
     for base in BASES:
-        for v, kind in variants(base).items():
+        for v in variants(base):
             name = f"v{len(table):04d}"
             table[name] = (v, base)
             (folder / f"{name}.txt").write_text(f"lorem {v} ipsum\n")
@@ -81,8 +81,10 @@ def main() -> None:
             names = [n for n, (_, b) in table.items() if b == base]
             ours = {n for n in names if fuzzy_word_match(base, table[n][0], True, t)}
             spot = {n for n in names if n in hits}
-            print(f"f{t:03d}       {base:10s}  {len(spot):9d}  {len(ours):4d}  "
-                  f"{len(spot - ours):6d}  {len(ours - spot):5d}")
+            print(
+                f"f{t:03d}       {base:10s}  {len(spot):9d}  {len(ours):4d}  "
+                f"{len(spot - ours):6d}  {len(ours - spot):5d}"
+            )
 
 
 if __name__ == "__main__":

@@ -50,6 +50,10 @@ def fold(text: str) -> str:
     return stripped.lower().replace("ß", "ss")
 
 
+def _is_punctuation(ch: str) -> bool:
+    return unicodedata.category(ch).startswith("P")
+
+
 def _strip_punctuation(piece: str) -> str:
     start, end = 0, len(piece)
     while start < end and unicodedata.category(piece[start]).startswith("P"):
@@ -79,7 +83,7 @@ def _elision_split(piece: str) -> list[str]:
     for i, ch in enumerate(piece):
         if ch in _APOSTROPHES:
             if _letters_after(piece, i + 1) >= 3:
-                return [piece[:i], piece[i + 1:]]
+                return [piece[:i], piece[i + 1 :]]
             break
     return [piece]
 
@@ -117,7 +121,7 @@ def words(text: str) -> tuple[str, ...]:
                 for i, ch in enumerate(sub):
                     if ch in _TAIL_SEPARATORS and i:
                         add(sub[i:])
-                        add(sub[i + 1:])
+                        add(sub[i + 1 :])
             pieces = re.split(f"[{_APOSTROPHES}]", core)
             kept = pieces[:1] + [p for p in pieces[1:] if sum(c.isalpha() for c in p) >= 3]
             for piece in kept:
@@ -144,7 +148,7 @@ def _first_term(raw: str) -> str | None:
     """
     term = raw.lstrip(_CONNECTORS)  # a leading apostrophe or hyphen is ignored ('amour)
     end = len(term)
-    while end > 0 and unicodedata.category(term[end - 1]).startswith("P") and term[end - 1] not in _CONNECTORS:
+    while end > 0 and _is_punctuation(term[end - 1]) and term[end - 1] not in _CONNECTORS:
         end -= 1
     core, trailing = term[:end], term[end:]
     if not core:
@@ -219,12 +223,12 @@ def token_matches(token: str, value: str, match_type: MatchType) -> bool:
 
 
 def highlight(text: str, tokens: list[str], start: str = "\x1b[1m", end: str = "\x1b[22m") -> str:
-    """Wrap the words of ``text`` that contain any search term."""
+    """Wrap the words of ``text`` that contain a search term, leaving punctuation outside."""
     if not tokens:
         return text
 
     def repl(m: re.Match) -> str:
-        w = fold(m.group(0))
-        return f"{start}{m.group(0)}{end}" if any(t in w for t in tokens) else m.group(0)
+        word = m.group(0)
+        return f"{start}{word}{end}" if any(t in fold(word) for t in tokens) else word
 
-    return re.sub(r"\S+", repl, text)
+    return re.sub(r"[^\W_]+(?:['’.@-][^\W_]+)*", repl, text)

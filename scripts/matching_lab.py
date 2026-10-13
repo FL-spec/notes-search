@@ -30,8 +30,9 @@ LAB = ROOT / "scripts" / "lab"
 
 
 def mdfind(folder: Path, query: str) -> set[str]:
-    out = subprocess.run(["mdfind", "-onlyin", str(folder), query],
-                         capture_output=True, text=True, timeout=300)
+    out = subprocess.run(
+        ["mdfind", "-onlyin", str(folder), query], capture_output=True, text=True, timeout=300
+    )
     return {Path(p).stem for p in out.stdout.splitlines()}
 
 
@@ -50,8 +51,11 @@ def main() -> None:
     print("Waiting for Spotlight to finish indexing (this can take a few minutes)…")
     for _ in range(200):
         files = mdfind(folder, 'kMDItemDisplayName = "n*"')
-        if len(files) >= len(corpus) and mdfind(folder, 'kMDItemTextContent="*user@example.com*"cwdt') \
-                and mdfind(folder, 'kMDItemTextContent="*3.14.159*"cwdt'):
+        if (
+            len(files) >= len(corpus)
+            and mdfind(folder, 'kMDItemTextContent="*user@example.com*"cwdt')
+            and mdfind(folder, 'kMDItemTextContent="*3.14.159*"cwdt')
+        ):
             break
         time.sleep(5)
     else:
@@ -65,7 +69,7 @@ def main() -> None:
         with ThreadPoolExecutor(8) as pool:
             spotlight = list(pool.map(lambda q: mdfind(folder, q), spotlight_query))
         diffs = []
-        for query, expected in zip(queries, spotlight):
+        for query, expected in zip(queries, spotlight, strict=True):
             ours = {Path(r.item.doc.id).stem for r in engine.search(query)}
             if ours != expected:
                 diffs.append((query, sorted(ours), sorted(expected)))

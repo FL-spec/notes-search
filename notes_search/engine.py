@@ -19,9 +19,9 @@ Then, as in -[ICSearchQueryOperation main]:
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Iterable, Iterator, Sequence
 
 from . import macos, nl
 from .query import (
@@ -155,7 +155,7 @@ def items_for(docs: Iterable[Document]) -> list[Item]:
     return items
 
 
-def cwdt_field_match(tokens: Sequence[str], value: str) -> bool:
+def cwdt_field_match(tokens: Sequence[str | None], value: str) -> bool:
     """Spotlight ``field="*w1 w2 … wn*"cwdt`` on one field value (tokens already folded).
 
     Measured with mdfind and Notes.app: w1 must occur inside one indexed token of the value;
@@ -166,10 +166,10 @@ def cwdt_field_match(tokens: Sequence[str], value: str) -> bool:
     value_words = words(value)
     if not any(tokens[0] in w for w in value_words):
         return False
-    return all(any(w.startswith(t) for w in value_words) for t in tokens[1:])
+    return all(any(w.startswith(t) for w in value_words) for t in tokens[1:] if t)
 
 
-def default_match(item: Item, tokens: Sequence[str]) -> bool:
+def default_match(item: Item, tokens: Sequence[str | None]) -> bool:
     """Notes' default query: the cwdt substring query on any one query field."""
     return any(cwdt_field_match(tokens, v) for v in item.values())
 
@@ -200,13 +200,14 @@ def _score(result: Result, groups: Sequence[Sequence[str]], ranking_type: int) -
 
 
 def _snippet(item: Item, tokens: Sequence[str], width: int = 90) -> str:
-    text = item.body or item.title
+    text = " ".join((item.body or item.title).split())
+    if len(text) <= width:
+        return text
     folded = fold(text)
     hits = [p for p in (folded.find(t) for t in tokens) if p >= 0]
-    pos = min(hits, default=0)
-    start = max(0, pos - width // 3)
-    s = " ".join(text[start:start + width].split())
-    return ("…" if start else "") + s + ("…" if start + width < len(text) else "")
+    start = max(0, min(hits, default=0) - width // 3)
+    end = start + width
+    return ("…" if start else "") + text[start:end] + ("…" if end < len(text) else "")
 
 
 def _sort_key(strategy: Strategy):
@@ -237,9 +238,7 @@ def _apply_filters(item: Item, f: nl.Filters, scope: Sequence[str]) -> bool:
         return False
     if f.tags and not all(f"#{t}" in fold(d.body + " " + d.title) for t in f.tags):
         return False
-    if f.has_attachments and not d.attachments:
-        return False
-    return True
+    return not (f.has_attachments and not d.attachments)
 
 
 class SearchEngine:
@@ -304,8 +303,12 @@ class SearchEngine:
         nl_text, filters = nl.parse(search) if self.natural_language else (search, nl.Filters())
         queries = [("default", joint_query(literal_substring_query(search), scope))]
         if self.spell_expansion:
-            queries.append(("prefix+spelling",
-                            joint_query(query_string("", MatchType.PREFIX, expanded_tokens=groups), scope)))
+            queries.append(
+                (
+                    "prefix+spelling",
+                    joint_query(query_string("", MatchType.PREFIX, expanded_tokens=groups), scope),
+                )
+            )
         if self.fuzzy and len("".join(search.split())) > 2:
             queries.append(("fuzzy", joint_query(query_string(search, MatchType.FUZZY), scope)))
             queries.append(("substring", joint_query(query_string(search, MatchType.SUBSTRING), scope)))
@@ -399,7 +402,9 @@ class SearchEngine:
             r.is_top_hit = True
         return results
 
-    def search_batched(self, search: str, batch_size: int = 25, scope: Sequence[str] = ()) -> Iterator[list[Result]]:
+    def search_batched(
+        self, search: str, batch_size: int = 25, scope: Sequence[str] = ()
+    ) -> Iterator[list[Result]]:
         """Deliver results in fixed-size batches, as Notes' found-items handler does.
 
         The Mac app sizes a batch as the number of rows that fit on screen:
@@ -407,7 +412,7 @@ class SearchEngine:
         """
         results = self.search(search, scope)
         for i in range(0, len(results), batch_size):
-            yield results[i:i + batch_size]
+            yield results[i : i + batch_size]
 
     @staticmethod
     def sections(results: Sequence[Result]) -> Sections:
