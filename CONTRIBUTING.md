@@ -1,10 +1,10 @@
 # Contributing
 
-Thanks for taking an interest. A few things are worth knowing before you change anything.
+Bug reports, mismatches with Notes.app and pull requests are welcome.
 
 ## The rules come from measurements
 
-Every matching and ordering rule in notes-search was checked against Notes.app (see
+The matching and ordering rules in notes-search were checked against Notes.app and Spotlight (see
 [docs/validation.md](docs/validation.md)). If you think a rule is wrong, the most useful thing you
 can send is a reproducible case:
 
@@ -30,12 +30,17 @@ To check matching and the fuzzy matcher against Spotlight on your Mac:
 ```bash
 python3 scripts/matching_lab.py fuzzylab/corpus
 python3 scripts/fuzzy_lab.py fuzzylab/typos
-python3 scripts/render_demo.py     # after changing output formatting
 ```
 
 The folder must not be hidden or inside a hidden folder, because Spotlight doesn't index those.
 If you change tokenization, add the queries you used to `scripts/lab/queries.json` and run the
 matching lab before and after.
+
+If you change how results are printed, regenerate the README's demo image:
+
+```bash
+python3 scripts/render_demo.py
+```
 
 ## Style
 
@@ -49,5 +54,5 @@ ruff check . && ruff format --check . && mypy notes_search
 
 - Standard library only. The project is meant to be read, and a dependency has to be worth it.
 - When code mirrors something in Apple's frameworks, name the Apple symbol in a comment, as the
-  existing code does. It is the only way the next person can check it.
+  existing code does, so the next person can check it against the binary.
 - Keep private data out of the repository. Don't paste real notes into tests, issues or commits.

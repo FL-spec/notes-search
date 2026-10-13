@@ -1,9 +1,9 @@
 # How Apple Notes search works
 
-This document explains, rule by rule, what happens between typing in the Notes search field and
-seeing the result list. Each rule is implemented in notes-search, and the section on each rule
-names the module that implements it. How the rules were found is in
-[reverse-engineering.md](reverse-engineering.md); how they were checked is in
+Apple Notes turns your search into a single Spotlight query, filters the matches by any date in
+the search, sorts them and marks the first two as Top Hits. Each step is implemented in
+notes-search, and each section ends with the module that implements it. How the rules were found
+is in [reverse-engineering.md](reverse-engineering.md), and how they were checked is in
 [validation.md](validation.md).
 
 Everything here describes Notes on macOS 26.
@@ -46,8 +46,8 @@ The four letters after the closing quote are Spotlight match options:
 | `w` | match on word boundaries |
 | `t` | split the search string into words before matching |
 
-The `t` flag does most of the work. Spotlight splits `*lisbon tram*` into the words `lisbon` and
-`tram` and keeps the wildcards at the two ends. That produces three rules.
+With the `t` flag, Spotlight splits `*lisbon tram*` into the words `lisbon` and `tram` and keeps
+the wildcards at the two ends, which gives three rules.
 
 **The first word matches anywhere inside a word.** It carries the leading `*`, so `ack` finds
 *back*, `orvat` finds *Quorvatix*, and a single letter finds every note containing it.
@@ -78,7 +78,8 @@ finds a note titled *Quorvatix 20 Release* whose body says *Fix names*.
 Spotlight doesn't search the raw text. It searches the words it stored when the note was
 indexed, and it stores more than one version of anything that contains punctuation. These rules
 were measured by running Notes' query through `mdfind` on a synthetic corpus (see
-[validation.md](validation.md)):
+[validation.md](validation.md)). In the two-word examples, the first word (*call*, *write*,
+*open*…) comes from elsewhere in the same note:
 
 | Text | Stored as | So these searches match |
 | --- | --- | --- |
@@ -110,15 +111,17 @@ Implementation: `engine.default_match`, `text.words`, `text.search_terms`, `text
 ### What the main query doesn't do
 
 It doesn't correct typos. Notes' code asks the system spell checker for guesses whenever a word
-looks misspelled, and builds a second query with them. In every test, that second query added
-nothing: `recpie` found no *recipe*, in English or Portuguese. notes-search keeps the code path
-behind `--spell` for experimenting and leaves it off by default.
+looks misspelled, and builds a second query with them. In Notes.app that second query never added
+a result: `configuraton` didn't find *configuration*, and the Portuguese `bateiras` didn't find
+*baterias*. notes-search keeps the code path behind `--spell` for experimenting and leaves it off
+by default.
 
 ## 2. Date phrases
 
 When the search contains a date phrase, Notes also runs a natural-language query, using a private
 Apple parser, that combines the remaining words with a date range. The ranges are calendar
-periods:
+periods. `yesterday`, `last month` and `from july` were measured in Notes.app; the other phrases
+follow the same calendar pattern in notes-search but weren't checked against the app:
 
 | Phrase | Range |
 | --- | --- |
@@ -130,9 +133,9 @@ periods:
 | `in july`, `from july 2025` | that calendar month |
 | `last 10 days` | the last ten days |
 
-"last month" is the one that surprises people: on 13 October it means *1 September until now*,
-not *the last 30 days*. Words like "notes", "from" and "modified" are dropped once a date is
-recognised, so `notes from july` returns every note from July.
+"last month" starts on the 1st of the previous month: on 13 October it means *1 September until
+now*, not *the last 30 days*. The words around a date phrase are dropped, so `notes from july`
+returns every note from July.
 
 notes-search also understands `folder:Name`, `folder:"Two words"`, `#tag` and `with attachments`.
 Notes' parser handles much more than this; see the limitations in the README.
@@ -149,13 +152,13 @@ Notes has three sort strategies. The app uses strategy 0:
 3. **Newest first,** by modification date, then by creation date.
 
 The strategy has more keys after these: whether the result was a prefix match, its relevance
-score and which fields matched. They never change the order in practice. The prefix flag is
-computed lazily and isn't set yet when Notes sorts, and two notes rarely share a modification
-time to the second.
+score and which fields matched. In every result list checked in Notes.app, they didn't change the
+order. Results that matched only inside a word were mixed by date with prefix matches, which
+suggests the lazily computed prefix flag isn't set yet when Notes sorts. The score could only
+matter for two notes edited in the same second.
 
-The relevance score does exist and is computed the way Notes computes it. Each field adds a
-fixed weight when one of the search words matches it, more for a whole-word prefix than for a
-fuzzy or mid-word match:
+notes-search computes the relevance score with Notes' formula. Each field adds a fixed weight when
+one of the search words matches it, more for a prefix match than for a fuzzy or mid-word match:
 
 | Field | prefix | fuzzy | inside a word |
 | --- | --- | --- | --- |
@@ -180,7 +183,8 @@ Implementation: `ranking.py`, `engine._score`, `engine._sort_key`.
 threshold. With one result, that result is the only Top Hit.
 
 **Attachments are searched as items of their own,** with the file name as the title. When an
-attachment matches, the note it belongs to is added to the results as well, so you see both.
+attachment matches, the note it belongs to is added to the results as well, so you see both. This
+comes from Notes' code; the library used for live testing had no attachments.
 
 **Locked notes are searchable by title only.** Their contents are encrypted and never indexed,
 and they sort by date like everything else.
@@ -193,6 +197,8 @@ Notes doesn't wait for every result. Results arrive in batches sized to the list
 fit on screen, and each batch is merged into the sections as it arrives. `search_batched` gives
 the same shape with a fixed batch size.
 
+Implementation: `engine.SearchEngine.search_batched`.
+
 ## Filters (search tokens)
 
 The chips under the search field, such as *Checklists*, *Locked* or *Attachments*, add an
@@ -202,15 +208,16 @@ attribute condition to the query:
 (_ICItemHasChecklists = 1) && (…main query…)
 ```
 
-With no text typed, a chip alone lists every note that has the attribute. In notes-search this is
-`--has checklists`, and so on.
+According to Notes' code, a chip with no text typed lists every note that has the attribute. In
+notes-search the chips are `--has checklists`, `--has locked` and so on.
 
 Implementation: `query.joint_query`, `query.TOKEN_ATTRIBUTES`.
 
 ## The features Notes leaves switched off
 
 Notes' code contains four search passes behind internal settings that aren't set on a normal Mac.
-They are implemented exactly, for anyone who wants to see what they would do.
+notes-search implements them from that code, as opt-in flags. The limits for related words
+(five neighbours, distance 1.0) are guesses, because Apple's values weren't recovered.
 
 **Fuzzy and substring passes (`--fuzzy`).** For searches longer than two characters, a
 typo-tolerant query runs, followed by a per-word substring query. The typo tolerance is

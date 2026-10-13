@@ -1,28 +1,28 @@
 # Reverse engineering notes
 
-How the behaviour described in [how-it-works.md](how-it-works.md) was worked out, with the
-Apple symbols each finding rests on. This is for readers who want to check the work or
-extend it.
+The behaviour described in [how-it-works.md](how-it-works.md) was worked out from three kinds of
+evidence. The Apple symbols behind each finding are named here, so the work can be checked or
+extended.
 
 ## Method
 
-Three kinds of evidence were used, and the project only trusts a rule once two of them agree.
+Matching and ordering rules were each confirmed by at least two of these. The ranking weights and
+the features Notes leaves switched off rest on the code alone.
 
-1. **Static analysis** of the shipped binaries: the `Notes` executable and its Spotlight index
+1. Static analysis of the shipped binaries: the `Notes` executable and its Spotlight index
    extension, and the private frameworks `NotesShared`, `NotesUI` and `NotesSupport`, plus
    Spotlight's `SpotlightIndex` and `MetadataUtilities`. The frameworks live in the dyld shared
    cache, so they were extracted with [ipsw](https://github.com/blacktop/ipsw) first.
    Decompilation used Ghidra 12.1 through [REA](https://github.com/morluto/rea), with `ipsw`
    disassembly for quick lookups of selectors and string constants.
-2. **Spotlight experiments** with `mdfind`. Notes stores its index in Spotlight, so any query
+2. Spotlight experiments with `mdfind`. Notes stores its index in Spotlight, so any query
    Notes builds can be run against plain files with the same engine, which isolates
    Spotlight's behaviour from Notes'.
-3. **Side-by-side tests** in Notes.app: type a search, read the result list, compare it with
+3. Side-by-side tests in Notes.app: type a search, read the result list, compare it with
    notes-search on the same library. See [validation.md](validation.md).
 
-The order matters. Twice, a conclusion that looked solid in the decompiled code was wrong in the
-running app. Both mistakes are described at the end, because they show why the third kind of
-evidence is not optional.
+Twice, a conclusion drawn from the decompiled code turned out to be wrong in the running app.
+Both cases are described at the end.
 
 All findings are from macOS 26 on Apple silicon (arm64e).
 
@@ -188,16 +188,17 @@ From `+[ICSortableSearchableItem sortDescriptorsForRankingStrategy:]`. `defaultS
 | 2 | searchResultType ↑, isPrefixMatch ↓, modificationDateBucket ↑, rankingScore ↓, relevanceBitField ↓, modificationDate ↓, creationDate ↓ |
 
 `isPrefixMatch` is filled in lazily (`lazilyInitializeHighlightInfoAndIsPrefixMatchIfNecessary`).
-In the app, results that matched only inside a word were consistently interleaved by date with
-prefix matches, so the flag is not set when sorting happens.
+In the app, results that matched only inside a word were consistently mixed by date with prefix
+matches, which suggests the flag isn't set yet when sorting happens.
 
 ## Natural language
 
 `+[ICSearchQueryOperation nlpParser]` creates a parser with the private `NLSearchParserCreate`
-from NLP.framework. Its grammar was not recovered. The date semantics notes-search implements
-were measured in the app.
+from NLP.framework. Its grammar was not recovered. Three date phrases were measured in the app
+(`yesterday`, `last month`, `from july`); notes-search extends the same calendar pattern to the
+others.
 
-## Two mistakes worth knowing about
+## Two conclusions the app disproved
 
 **"Substring matching is switched off."** The fuzzy-and-substring pass in step 2 is gated by an
 internal setting that is never on, and the first version of this project concluded from that
@@ -205,9 +206,9 @@ that Notes matches only word prefixes. In the app, `ack` finds *back*. The match
 somewhere else: the literal substring query inside the default suggestions query, which the gated
 pass has nothing to do with.
 
-**"Typos are corrected by the spell checker."** The prefix query clearly requests spell-checker
-guesses, and the system spell checker clearly returns them (`recpie` → *recipe*). Yet no
-misspelled search in English or Portuguese returned anything in Notes. Whatever reaches Spotlight
+**"Typos are corrected by the spell checker."** The prefix query requests spell-checker guesses,
+and the system spell checker returns them when asked directly (`recpie` → *recipe*). Yet none of
+the misspelled searches tried in Notes, in English or Portuguese, returned anything. Whatever reaches Spotlight
 from that path, it doesn't add results.
 
 Both were caught by running the same searches in Notes.app, and both are now covered by tests.

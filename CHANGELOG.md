@@ -24,7 +24,7 @@ All notable changes to this project are documented here. The format follows
 
 First public release.
 
-- Matching follows the query Notes actually runs, `"*search*"cwdt`: the first word matches
+- Matching follows the query Notes runs, `"*search*"cwdt`: the first word matches
   inside words, later words match word starts, word order is free.
 - Text is tokenized the way Spotlight indexes it: compounds such as `alpha-beta`, emails, URLs
   and numbers are searchable whole and in parts, camelCase and letter/digit runs are split, and

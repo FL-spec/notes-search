@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/FL-spec/notes-search/actions/workflows/ci.yml/badge.svg)](https://github.com/FL-spec/notes-search/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/FL-spec/notes-search)](https://github.com/FL-spec/notes-search/releases)
-[![Python](https://img.shields.io/badge/python-3.10%E2%80%933.13-3776ab)](pyproject.toml)
+[![Python](https://img.shields.io/badge/python-3.10%E2%80%933.14-3776ab)](pyproject.toml)
 [![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
@@ -20,16 +20,17 @@ then checked against both, search by search. It's a small Python package with no
 
 ## Highlights
 
-- **The same results as Notes.** 54 of 54 searches matched Notes.app on a real library, and 414 of
-  417 matched Spotlight on a corpus written to break it. [How this was tested](docs/validation.md).
-- **The rules, written down.** [docs/how-it-works.md](docs/how-it-works.md) explains every
-  matching, ordering and tokenization rule, and [docs/reverse-engineering.md](docs/reverse-engineering.md)
-  names the Apple symbols behind them.
-- **Your notes, or any text.** Index Apple Notes, folders of Markdown and text files, or JSON, and
-  search them together.
-- **The features Apple left switched off.** Notes contains a typo-tolerant search, spell-checker
-  expansion and related-word queries that the app never enables. They're here as opt-in flags.
-- **Local and private.** Nothing leaves your Mac. See the [security policy](SECURITY.md).
+- Results match Notes: 54 of 54 searches on a real library were identical in Notes.app, and 414
+  of 417 queries on a synthetic test corpus were identical in Spotlight
+  ([how this was tested](docs/validation.md)).
+- Every matching, ordering and tokenization rule is written down in
+  [docs/how-it-works.md](docs/how-it-works.md), with the Apple symbols behind them in
+  [docs/reverse-engineering.md](docs/reverse-engineering.md).
+- It indexes Apple Notes, folders of Markdown and text files, and JSON, and searches them
+  together.
+- Search features in Notes' code that never affect results in the app, such as typo tolerance and
+  related-word queries, are available as opt-in flags.
+- Nothing leaves your Mac. See the [security policy](SECURITY.md).
 
 ## Install
 
@@ -48,7 +49,7 @@ pip install .
 
 ## Quick start
 
-Try it on the sample notes that come with the repository:
+Try it on the sample notes in the repository. From a clone:
 
 ```bash
 notes-search search "ill" --source examples/notes
@@ -77,7 +78,8 @@ Notes. Locked notes are indexed by title only, which is what Notes itself does.
 3. **Words can come from anywhere in the note,** title included, in any order.
 4. **Punctuation follows Spotlight's index.** `user@example.com`, `alpha-beta`, URLs and numbers
    are stored whole and in parts, so `example.com` and `beta` both find them.
-5. **Typos aren't corrected.** Notes asks the spell checker for guesses, but they never add results.
+5. **Typos aren't corrected.** Notes asks the spell checker for guesses, but in testing they never
+   added a result.
 6. **Newest first.** An exact title match leads, then notes come before attachments, then the most
    recently edited. The first two results are the Top Hits.
 7. **Dates are filters.** "last month" means since the 1st of the previous month.
@@ -93,19 +95,21 @@ notes-search index apple-notes
 notes-search index ~/Documents/notes backup.json
 ```
 
-Sources are folders of `.md`, `.txt`, `.org` or `.rst` files, JSON files, or `apple-notes`, and
-several can go into one index. In folders, the first non-empty line of a file is its title.
+Sources are folders of `.md`, `.markdown`, `.txt`, `.text`, `.org` or `.rst` files, JSON files,
+or `apple-notes`, and several can go into one index. In folders, the first non-empty line of a file is its title.
 
 The index lives at `~/.notes-search/index.json`, or wherever `--index` or `NOTES_SEARCH_INDEX`
 points. It contains the full text of everything you indexed.
 
 ### Searching
 
+These work on an index of the sample notes (`notes-search index examples/notes`):
+
 ```bash
-notes-search search "budget last month"
+notes-search search "lisbon this year"
 notes-search search "milk" --has checklists
-notes-search search "taxes" --verbose
-notes-search search "taxes" --json
+notes-search search "vanilla" --verbose
+notes-search search "vanilla" --json
 notes-search interactive
 ```
 
@@ -119,7 +123,7 @@ notes-search interactive
 | `--no-nl` | Treat date phrases, `folder:` and `#tags` as plain text. |
 | `--json`, `--limit N` | Machine-readable output; number of results. |
 
-Features that exist in Notes but are switched off in the app:
+Features in Notes' code that never affect results in the app, available for experimenting:
 
 | Option | Feature |
 | --- | --- |
@@ -168,8 +172,8 @@ corpus and queries are in [`scripts/lab`](scripts/lab), so you can rerun the com
 ## FAQ
 
 **Does it read the Notes database directly?**
-No. It asks Notes for your notes through Apple's automation interface, the way a script would, so
-it needs no special access and never opens Notes' files.
+No. It asks Notes for your notes through Apple's automation interface, the way a script would. It
+needs only the one-time automation permission and never opens Notes' files.
 
 **Why not just use Spotlight or `mdfind`?**
 They only search what Spotlight has indexed on your Mac, and they don't order results or pick Top
@@ -187,16 +191,15 @@ No. See [License](#license).
 
 ## Limitations
 
-- **Natural language.** Notes parses phrases like "photos from last summer" with a private Apple
-  parser. notes-search understands the date phrases that were measured, plus `folder:` and
-  `#tags`, but not Apple's full grammar.
-- **Attachment kinds.** Drawings and scanned documents can't be told apart through Notes'
-  automation interface, so `--has drawings` and `--has scans` only work for sources that set them.
-- **Photo recognition.** Notes also searches labels from on-device image recognition.
-  notes-search searches those labels when a source provides them, but doesn't generate them.
-- **Spotlight quirks.** A few edge cases differ, such as fragments starting at an inner apostrophe
-  (`n'roll` in *rock'n'roll*). They're listed in [validation.md](docs/validation.md).
-- **One version.** Everything was measured on macOS 26. Apple can change search in any release.
+- Notes parses phrases like "photos from last summer" with a private Apple parser. notes-search
+  understands date phrases, `folder:` and `#tags`, but not Apple's full grammar.
+- Drawings and scanned documents can't be told apart through Notes' automation interface, so
+  `--has drawings` and `--has scans` only work for sources that set those flags.
+- Notes also searches labels from on-device image recognition. notes-search searches those labels
+  when a source provides them, but doesn't generate them.
+- A few Spotlight edge cases differ, such as fragments starting at an inner apostrophe (`n'roll`
+  in *rock'n'roll*). They're listed in [validation.md](docs/validation.md).
+- Everything was measured on macOS 26. Apple can change search in any release.
 
 ## Contributing
 
