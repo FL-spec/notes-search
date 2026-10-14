@@ -324,7 +324,7 @@ class CLITests(unittest.TestCase):
 
 
 class SourceTests(unittest.TestCase):
-    def test_apple_notes_export_skips_recently_deleted(self):
+    def test_apple_notes_export_includes_recently_deleted_like_notes(self):
         import json
         import subprocess
         from unittest import mock
@@ -338,9 +338,26 @@ class SourceTests(unittest.TestCase):
         ]
         done = subprocess.CompletedProcess([], 0, stdout=json.dumps(exported), stderr="")
         with mock.patch.object(sources.subprocess, "run", return_value=done):
-            self.assertEqual([d.title for d in sources.from_apple_notes()], ["Kept"])
-            all_titles = [d.title for d in sources.from_apple_notes(include_deleted=True)]
+            all_titles = [d.title for d in sources.from_apple_notes()]
+            kept = [d.title for d in sources.from_apple_notes(include_deleted=False)]
         self.assertEqual(all_titles, ["Kept", "Gone", "Weg"])
+        self.assertEqual(kept, ["Kept"])
+
+    def test_index_flags_choose_whether_deleted_notes_are_kept(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        from notes_search import cli
+
+        for flags, expected in (([], True), (["--skip-deleted"], False), (["--include-deleted"], True)):
+            with (
+                mock.patch.object(cli, "load", return_value=[]) as load,
+                mock.patch.object(cli, "_save"),
+                contextlib.redirect_stdout(io.StringIO()),
+            ):
+                cli.main(["index", "apple-notes", *flags])
+            self.assertEqual(load.call_args.kwargs["include_deleted"], expected, flags)
 
     def test_html_to_text(self):
         self.assertEqual(html_to_text("<div>Title</div><div>a<br>b</div>"), "Title\na\nb")

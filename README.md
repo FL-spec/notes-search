@@ -20,8 +20,8 @@ then checked against both, search by search. It's a small Python package with no
 
 ## Highlights
 
-- Results match Notes: 54 of 54 searches on a real library were identical in Notes.app, and 414
-  of 417 queries on a synthetic test corpus were identical in Spotlight
+- Results match Notes: 77 of 77 searches were identical in Notes.app, on a real library and on
+  a synthetic test corpus, and 414 of 417 corpus queries were identical in Spotlight
   ([how this was tested](docs/validation.md)).
 - Every matching, ordering and tokenization rule is written down in
   [docs/how-it-works.md](docs/how-it-works.md), with the Apple symbols behind them in
@@ -64,7 +64,8 @@ notes-search search "lisbon tram"
 
 The first time you index `apple-notes`, macOS asks for permission to let your terminal control
 Notes. Locked notes are indexed by title only, which is what Notes itself does. Notes in Recently
-Deleted are skipped; add `--include-deleted` to index them too.
+Deleted are indexed too, because Notes shows them in search results; add `--skip-deleted` to
+leave them out.
 
 ## How Notes search works
 
@@ -164,6 +165,7 @@ search notes stored somewhere else, build `notes_search.sources.Document` object
 | Test | Result |
 | --- | --- |
 | Notes.app, real 17-note library | 54 / 54 searches identical: same notes, order and Top Hits |
+| Notes.app, synthetic corpus | 23 / 23 searches identical |
 | Spotlight, synthetic corpus (accents, ß, URLs, emails, camelCase, emoji, Japanese, apostrophes) | 414 / 417 queries identical, including 71 never used to change the code |
 | Spotlight's fuzzy matcher, 295 typo variants at four thresholds | no match Spotlight accepts is rejected |
 

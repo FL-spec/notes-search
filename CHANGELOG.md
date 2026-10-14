@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 1.1.0
+
+### Changed
+
+- The Apple Notes import includes notes in Recently Deleted again, because Notes' own search
+  returns them (checked in Notes.app on macOS 26). Use `--skip-deleted` to leave them out.
+  `--include-deleted` is still accepted and now does nothing.
+
+### Added
+
+- `docs/validation.md` records a second Notes.app comparison: 23 searches over the synthetic
+  corpus, all identical.
+
 ## 1.0.2
 
 ### Fixed

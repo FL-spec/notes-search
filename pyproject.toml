@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "notes-search"
-version = "1.0.2"
+version = "1.1.0"
 description = "Search notes and text files exactly the way Apple Notes does"
 readme = "README.md"
 license = { text = "MIT" }

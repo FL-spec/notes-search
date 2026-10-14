@@ -1,16 +1,17 @@
 # Validation
 
-notes-search should return the same notes as Apple Notes, in the same order. Three checks tested
+notes-search should return the same notes as Apple Notes, in the same order. Four checks tested
 that, each against a different reference:
 
 | Check | Question | Result |
 | --- | --- | --- |
 | Notes.app, real library | Does it agree with the app on real notes? | 54 of 54 searches identical |
+| Notes.app, synthetic corpus | Do the corpus rules hold inside the app? | 23 of 23 searches identical |
 | Spotlight, synthetic corpus | Are the matching rules right for text nobody tuned them on? | 414 of 417 queries identical |
 | Spotlight, typo variants | Is the fuzzy matcher right? | no false rejections in 1,180 checks |
 
-The first two found real errors, which are fixed. The remaining differences are listed at the end
-of section 2.
+The real library and the Spotlight corpus run found real errors, which are fixed. The remaining
+differences are listed at the end of section 2.
 
 ## 1. Notes.app on a real library
 
@@ -104,6 +105,17 @@ To reproduce the comparison on a Mac:
 python3 scripts/matching_lab.py fuzzylab/corpus
 ```
 
+### The corpus in Notes.app
+
+The corpus was also created as real notes in a test folder. The folder was later deleted, which
+left 24 of the notes in Recently Deleted, and Notes still shows them in search results. 23 searches were run in
+the Notes search field with All iCloud selected and compared with notes-search's predictions,
+made first from an export of the same library. They covered substrings (`orvat`, `eijo`),
+hyphens, possessives and other apostrophes, accents in both directions (`creme brulee`,
+`BRÛLÉE`), `ß` as `ss`, camelCase, an email address, a host name, a hashtag, a mention, an exact
+title, and six searches that should find nothing. All 23 returned the same notes in the same
+order, with the same Top Hits.
+
 ## 3. The fuzzy matcher
 
 Shipping Notes doesn't use fuzzy matching, but the matcher behind `--fuzzy` is meant to equal
@@ -130,11 +142,8 @@ python3 scripts/fuzzy_lab.py fuzzylab/typos
 
 ## What hasn't been tested against Notes.app
 
-The synthetic corpus was created as real notes in a test folder, but it wasn't searched side by
-side in the app. Section 2 tests the same engine through `mdfind` instead.
-
-Whether Notes' own search includes notes in Recently Deleted wasn't checked. notes-search skips
-them by default; `--include-deleted` indexes them.
+Only 23 of the 417 corpus queries were run in Notes.app; the rest were checked through
+`mdfind`, which uses the same engine.
 
 Attachments weren't tested, because the real library had none. Attachment search and parent notes
 follow Notes' code.

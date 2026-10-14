@@ -176,8 +176,13 @@ def main(argv=None) -> None:
     i = sub.add_parser("index", help="build an index from folders, JSON files or 'apple-notes'")
     i.add_argument("sources", nargs="+")
     i.add_argument(
-        "--include-deleted", action="store_true", help="also index notes in Recently Deleted (apple-notes)"
+        "--skip-deleted",
+        dest="include_deleted",
+        action="store_false",
+        help="leave out notes in Recently Deleted (apple-notes); Notes itself searches them",
     )
+    # Accepted for compatibility with 1.0.2, where deleted notes were skipped by default.
+    i.add_argument("--include-deleted", dest="include_deleted", action="store_true", help=argparse.SUPPRESS)
     i.set_defaults(func=cmd_index)
 
     def search_opts(sp):

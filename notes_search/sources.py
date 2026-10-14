@@ -210,12 +210,12 @@ function run() {
 """
 
 
-def from_apple_notes(timeout: int = 1800, include_deleted: bool = False) -> Iterator[Document]:
+def from_apple_notes(timeout: int = 1800, include_deleted: bool = True) -> Iterator[Document]:
     """Export notes through JavaScript for Automation (bulk property reads).
 
     macOS asks once for permission for your terminal to control Notes. Locked notes are
     returned without their contents, as Notes does for Spotlight. Notes in Recently Deleted are
-    skipped unless ``include_deleted`` is set.
+    included, because Notes' own search shows them; pass ``include_deleted=False`` to skip them.
     """
     proc = subprocess.run(
         ["osascript", "-l", "JavaScript", "-e", _JXA_EXPORT], capture_output=True, text=True, timeout=timeout
@@ -254,7 +254,7 @@ def _iso(value: str | None) -> datetime | None:
     return datetime.fromisoformat(value.replace("Z", "+00:00")) if value else None
 
 
-def load(sources: Iterable[str], include_deleted: bool = False) -> list[Document]:
+def load(sources: Iterable[str], include_deleted: bool = True) -> list[Document]:
     docs: list[Document] = []
     for src in sources:
         if src == "apple-notes":
